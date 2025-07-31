@@ -17,26 +17,26 @@ Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-
   ### Motors
 
   A
-  IN1 - GPIO29
-  IN2 - GPIO28
-  PWM - GPIO24
+  * IN1 - GPIO29
+  * IN2 - GPIO28
+  * PWM - GPIO24
 
   B
-  IN1 - GPIO31
-  IN2 - GPIO32
-  PWM - GPIO25
+  * IN1 - GPIO31
+  * IN2 - GPIO32
+  * PWM - GPIO25
 
   STANDBY - GPIO30
 
   C
-  IN1 - GPIO34
-  IN2 - GPIO33
-  PWM - GPIO26
+  * IN1 - GPIO34
+  * IN2 - GPIO33
+  * PWM - GPIO26
 
   D
-  IN1 - GPIO36
-  IN2 - GPIO37
-  PWM - GPIO27
+  * IN1 - GPIO36
+  * IN2 - GPIO37
+  * PWM - GPIO27
 
   STANDBY - GPIO35 
 
