@@ -78,5 +78,3 @@ Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-
 
 
    
-
-
