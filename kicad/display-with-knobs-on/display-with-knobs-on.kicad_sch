@@ -1,0 +1,184 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "c0594319-e7dd-4c94-9dfe-0490edd3c28b")
+	(paper "A4")
+	(lib_symbols)
+	(text_box "Spec\n\nController\nVreg\n\nUSBc 4 line in\nJST\nBattery management\n\n3 H bridge or equivilent\nControl line output socket\n\nTwo way analogue joystick\nFour way analouge joystick"
+		(exclude_from_sim no)
+		(at 35.56 30.48 0)
+		(size 73.66 78.74)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 3 3)
+			)
+			(justify left top)
+		)
+		(uuid "55723383-a7fa-4800-a057-400588908a3e")
+	)
+	(sheet
+		(at 153.67 73.66)
+		(size 41.91 25.4)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "103aace1-b582-4e1c-a9fe-c00bc77374d8")
+		(property "Sheetname" "Joysticks"
+			(at 153.67 72.9484 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "joysticks.kicad_sch"
+			(at 153.67 99.6446 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "TOUV"
+				(path "/c0594319-e7dd-4c94-9dfe-0490edd3c28b"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 153.67 34.29)
+		(size 41.91 26.67)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "176fe0db-3db3-4719-afaa-74ab45fc46f3")
+		(property "Sheetname" "Power"
+			(at 153.67 33.5784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "battery.kicad_sch"
+			(at 153.67 61.5446 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "TOUV"
+				(path "/c0594319-e7dd-4c94-9dfe-0490edd3c28b"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 214.63 74.93)
+		(size 41.91 24.13)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "c6d6da96-e1af-4b3c-84d5-363071806406")
+		(property "Sheetname" "Motors"
+			(at 214.63 74.2184 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "motors.kicad_sch"
+			(at 214.63 99.6446 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "TOUV"
+				(path "/c0594319-e7dd-4c94-9dfe-0490edd3c28b"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 214.63 34.29)
+		(size 41.91 27.94)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "f91d6aed-3233-46bd-ae60-29a02682ff96")
+		(property "Sheetname" "Controller"
+			(at 214.63 33.5784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "TOUV_controller.kicad_sch"
+			(at 214.63 62.8146 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "TOUV"
+				(path "/c0594319-e7dd-4c94-9dfe-0490edd3c28b"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
