@@ -1,6 +1,6 @@
 # display-with-knobs-on
 
-Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display) but not necessarily yellow and with two joystick inputs. Originally designed to control [The open source underwater vehicle](https://github.com/concretedog/Tiny-Opensource-Underwater-Vehicle-TOUV-) project. 
+Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display) but not necessarily yellow and with two joystick inputs and four channels of brushed motor output. Originally designed to control [The open source underwater vehicle](https://github.com/concretedog/Tiny-Opensource-Underwater-Vehicle-TOUV-) project. 
 
 ## Features
 
@@ -11,5 +11,33 @@ Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-
 * 2 x [TB6612FNG](https://toshiba.semicon-storage.com/us/product/linear/motordriver/detail.TB6612FNG.html) - Four channels of brushed motor outputs
 * [IP5310](https://www.injoinic.com/api//static/uploads/20250528/20250528180445_6836dfbd54166.pdf) - Battery charger management with 3A boost output @ 5V for motors
 * 2 x Joystick - Two axis analoge joysticks with push button inputs
+
+  ## GPIO
+
+  ### Motors
+
+  A
+  IN1 - GPIO29
+  IN2 - GPIO28
+  PWM - GPIO24
+
+  B
+  IN1 - GPIO31
+  IN2 - GPIO32
+  PWM - GPIO25
+
+  STANDBY - GPIO30
+
+  C
+  IN1 - GPIO34
+  IN2 - GPIO33
+  PWM - GPIO26
+
+  D
+  IN1 - GPIO36
+  IN2 - GPIO37
+  PWM - GPIO27
+
+  STANDBY - GPIO35 
 
 
