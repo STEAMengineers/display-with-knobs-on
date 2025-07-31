@@ -38,6 +38,45 @@ Think [cheap yellow display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-
   * IN2 - GPIO37
   * PWM - GPIO27
 
-  STANDBY - GPIO35 
+  STANDBY - GPIO35
+
+  ### Joysticks
+  A
+  * X - GPIO43
+  * Y - GPIO44
+  * Button - GPIO39
+ 
+  B
+  * X - GPIO41
+  * Y - GPIO42
+  * Button - GPIO38
+ 
+  ### Screen
+
+  Display
+  * CS - GPIO13
+  * RESET - GPIO18
+  * DC/RS - GPIO17
+  * MOSI - GPIO11
+  * MISO - GPIO12
+  * SCK - GPIO14
+  * LED - GPIO16
+ 
+  Touch
+  * CS - GPIO10
+  * IRQ - GPIO15
+  * MOSI - GPIO11
+  * MISO - GPIO12
+  * SCK - GPIO14
+ 
+  SD card
+  * CS - GPIO21
+  * SCK - GPIO22
+  * MOSI - GPIO19
+  * MISO - GPIO20
+
+
+
+   
 
 
