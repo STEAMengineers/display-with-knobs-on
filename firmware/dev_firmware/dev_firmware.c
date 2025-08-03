@@ -6,6 +6,7 @@
 #include "math.h"
 #include "lib/screen.h"
 #include "lvgl/lvgl.h"
+#include "lib/anim_frames.h"
 
 //#include "lib/ili9488.h"
 
@@ -63,6 +64,22 @@ lv_obj_t * bar_motor_b = NULL;
  lv_obj_t *arc_dial = NULL;
 lv_obj_t *arc_label = NULL;
 
+// Animation frames for the animation
+const lv_image_dsc_t * anim_frames[] = {
+    &animation00, &animation01, &animation02, &animation03, &animation04, &animation05, &animation06, &animation07,
+    &animation08, &animation09, &animation10, &animation11, &animation12, &animation13, &animation14, &animation15,
+    &animation16, &animation17, &animation18, &animation19, &animation20, &animation21, &animation22, &animation23,
+    &animation24, &animation25, &animation26, &animation27, &animation28, &animation29, &animation30, &animation31,
+    &animation32, &animation33, &animation34, &animation35, &animation36, &animation37
+};
+const uint8_t anim_frame_count = sizeof(anim_frames) / sizeof(anim_frames[0]);
+static lv_obj_t * anim_img = NULL;
+static uint8_t anim_frame_idx = 0;
+
+static void anim_img_timer_cb(lv_timer_t * timer) {
+    anim_frame_idx = (anim_frame_idx + 1) % anim_frame_count;
+    lv_image_set_src(anim_img, anim_frames[anim_frame_idx]);
+}
 
 static uint32_t my_tick(void) {
 
@@ -228,6 +245,15 @@ lv_obj_set_style_arc_color(arc_dial, lv_palette_main(LV_PALETTE_BLUE), LV_PART_I
 arc_label = lv_label_create(arc_dial);
 lv_label_set_text(arc_label, "0%");
 lv_obj_center(arc_label);
+
+//Animation image in col3_row2
+anim_img = lv_image_create(col3_row2);
+lv_image_set_src(anim_img, anim_frames[0]);
+lv_obj_set_align(anim_img, LV_ALIGN_LEFT_MID);
+lv_obj_set_style_pad_all(col3_row2, 0, 0);
+lv_obj_set_style_border_width(col3_row2, 0, 0);
+lv_timer_create(anim_img_timer_cb, 100, NULL); // 100 ms interval for animation
+
 
 }
 
