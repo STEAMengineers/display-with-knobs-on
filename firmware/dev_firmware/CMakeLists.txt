@@ -54,7 +54,12 @@ target_link_libraries(dev_firmware
 # Add the standard include files to the build
 target_include_directories(dev_firmware PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/lvgl
 )
+
+set(LV_CONF_INCLUDE_SIMPLE ON)
+add_subdirectory(lvgl)
+
 
 # Add any user requested libraries
 target_link_libraries(dev_firmware 
@@ -62,6 +67,7 @@ target_link_libraries(dev_firmware
         hardware_adc
         hardware_pwm
         screen
+        lvgl
         )
 
 pico_add_extra_outputs(dev_firmware)

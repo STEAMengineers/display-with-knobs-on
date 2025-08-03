@@ -3,6 +3,8 @@
 #include "./pico/stdlib.h"
 
 #include "hardware/spi.h"
+#include "lvgl.h"
+
 
 void spi_write(unsigned char d)
 {
@@ -80,7 +82,7 @@ void screen_init()
     write_data(0x00);
 
     write_command(0x36);
-    write_data(0x08);
+    write_data(0x68);   // rotation
 
     write_command(0x3A);
     write_data(0x66);
@@ -138,7 +140,7 @@ void screen_clear(unsigned int j)
 {	
   unsigned int i,m;
   gpio_put(SCREEN_CS, 0);
-  screen_address_set(0,0,320,480);
+  screen_address_set(0,0,479,319);
   for(i=0;i<320;i++)
     for(m=0;m<480;m++)
     {
@@ -162,4 +164,70 @@ void screen_address_set(unsigned int x1,unsigned int y1,unsigned int x2,unsigned
 	write_data(y2>>8);
 	write_data(y2);
 	write_command(0x2c);
+}
+
+
+void my_flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p)
+{
+    uint16_t x1 = area->x1;
+    uint16_t y1 = area->y1;
+    uint16_t x2 = area->x2;
+    uint16_t y2 = area->y2;
+        printf("In the flush callback - ");
+        printf("Area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
+    // Set the address window for the display
+        gpio_put(SCREEN_CS, 0);
+    screen_address_set(x1, y1, x2, y2);
+    printf("Address set for area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
+    printf("Flush area: %d x %d\n", (area->x2 - area->x1 + 1), (area->y2 - area->y1 + 1));
+    gpio_put(SCREEN_CS, 0);
+    size_t px_count = (x2 - x1 + 1) * (y2 - y1 + 1);
+    printf("Pixels to write: %zu\n", px_count);
+
+
+    uint16_t * color = (uint16_t *)color_p;
+    for (size_t i = 0; i < px_count; i++) {
+        uint16_t c = *color++;
+        uint8_t r = (c >> 11) & 0x1F;
+        uint8_t g = (c >> 5) & 0x3F;
+        uint8_t b = c & 0x1F;
+        r = r << 3;
+        g = g << 2;
+        b = b << 3;
+        write_data(r);
+        write_data(g);
+        write_data(b);
+    }
+// uint16_t * color = (uint16_t *)color_p;
+//     for (uint32_t y = y1; y <= y2; y++) {
+//         for (uint32_t x = x1; x <= x2; x++) {
+//         uint16_t c = *color++;
+//             //color++;
+//             uint8_t r = (c >> 11) & 0x1F;
+//             uint8_t g = (c >> 5) & 0x3F;
+//             uint8_t b = c & 0x1F;
+//             r = r << 3;
+//             g = g << 2;
+//             b = b << 3;
+//             write_data(r);
+//             write_data(g);
+//             write_data(b);
+//         }
+//     }
+
+// for (uint32_t y = y1; y <= y2; y++) {
+//     for (uint32_t x = x1; x <= x2; x++) {
+//         uint8_t r = ((x/20 + y/20) % 2) ? 0xF8 : 0x00;
+//         uint8_t g = ((x/20 + y/20) % 2) ? 0xFC : 0x00;
+//         uint8_t b = ((x/20 + y/20) % 2) ? 0xF8 : 0x00;
+//         write_data(r);
+//         write_data(g);
+//         write_data(b);
+//     }
+// }
+
+    gpio_put(SCREEN_CS, 1);
+
+    // IMPORTANT: Inform LVGL flushing is done
+    lv_disp_flush_ready(disp);
 }

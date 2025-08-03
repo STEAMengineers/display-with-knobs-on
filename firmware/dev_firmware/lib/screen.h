@@ -1,6 +1,8 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+#include "lvgl.h"
+
 #define SCREEN_CS 13
 #define SCREEN_RESET 18
 #define SCREEN_DC_RS 17
@@ -17,5 +19,6 @@ void write_data(unsigned char data);
 void write_command_and_data(unsigned char command, unsigned char data);
 void screen_address_set(unsigned int x1,unsigned int y1,unsigned int x2,unsigned int y2);
 void screen_clear(unsigned int j);
+void my_flush_cb (lv_display_t * disp, const lv_area_t * area, uint8_t * color_p);
 
 #endif

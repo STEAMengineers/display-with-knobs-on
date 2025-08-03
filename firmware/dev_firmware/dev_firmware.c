@@ -5,6 +5,8 @@
 #include "hardware/pwm.h"
 #include "math.h"
 #include "lib/screen.h"
+#include "lvgl/lvgl.h"
+
 //#include "lib/ili9488.h"
 
 //TODO -SCREEN
@@ -30,7 +32,7 @@
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define SPI_PORT spi0
+#define SPI_PORT spi1
 #define PIN_MISO 12
 #define PIN_CS   13
 #define PIN_SCK  14
@@ -39,6 +41,36 @@
 #define SCREEN_DC 17
 #define SCREEN_BACKLIGHT 16
 
+#define DISPLAY_WIDTH 480
+#define DISPLAY_HEIGHT 320
+//#define BYTES_PER_PIXEL (LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565))
+// Buffer for the display
+// This buffer will be used to hold the pixel data for the display
+// The size of the buffer is calculated based on the display width, height, and color depth
+//static uint8_t buf1[DISPLAY_WIDTH * 10 * 2]; // 10 rows of pixels, each pixel is 2 bytes (RGB565)
+
+
+#define LV_COLOR_SIZE 2
+static uint8_t buf1[DISPLAY_WIDTH * 320 * LV_COLOR_SIZE];
+
+// static lv_draw_buf_t buf1[DISPLAY_WIDTH * 10 * LV_COLOR_SIZE];
+
+volatile float last_motor_a_speed = 0; // Global variable to store the last speed of motor A
+lv_obj_t * bar_motor_a = NULL;
+volatile float last_motor_b_speed = 0; // Global variable to store the last speed of motor B
+lv_obj_t * bar_motor_b = NULL;
+
+ lv_obj_t *arc_dial = NULL;
+lv_obj_t *arc_label = NULL;
+
+
+static uint32_t my_tick(void) {
+
+	return to_ms_since_boot(get_absolute_time());
+}
+
+
+//Motor Functions
 
 void motor_configure_pwm(uint8_t gpio_pin, float target_frequency) {
     gpio_set_function(gpio_pin, GPIO_FUNC_PWM);
@@ -75,12 +107,134 @@ void motor_set_speed(uint8_t pwm_pin, uint8_t in1_pin, uint8_t in2_pin, float sp
             float duty_cycle = fabsf(speed); 
             pwm_set_gpio_level(pwm_pin, (uint16_t)(duty_cycle * 65535));
 
+        // Store the last speed for display updates
+        if (pwm_pin == MOTOR_A_PWM_PIN) {
+            last_motor_a_speed = speed;
+        } else if (pwm_pin == MOTOR_B_PWM_PIN) {
+            last_motor_b_speed = speed;
+        }   
+
 }
 
+
+void lv_dashboard_set(void)
+{
+    // Main container (screen)
+    lv_obj_t * cont = lv_obj_create(lv_screen_active());
+    lv_obj_set_size(cont, 470, 310);
+    lv_obj_center(cont);
+    lv_obj_set_style_pad_all(cont, 0, 0);
+    lv_obj_set_style_border_width(cont, 0, 0);
+    lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN); // vertical stacking
+
+    // Top bar (20px high, full width)
+    lv_obj_t * top_bar = lv_obj_create(cont);
+    lv_obj_set_size(top_bar, 470, 20);
+    lv_obj_set_style_bg_color(top_bar, lv_palette_main(LV_PALETTE_BLUE), 0);
+    lv_obj_set_style_border_width(top_bar, 0, 0);
+
+    // Row container for columns
+    lv_obj_t * row = lv_obj_create(cont);
+    lv_obj_set_size(row, 470, 290); // Remaining height
+    lv_obj_set_style_pad_all(row, 0, 0);
+    lv_obj_set_style_border_width(row, 0, 0);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW); // horizontal stacking
+
+    // First column (120 wide)
+    lv_obj_t * col1 = lv_obj_create(row);
+    lv_obj_set_size(col1, 120, 290);
+    lv_obj_set_style_border_width(col1, 0, 0);
+
+    // Second column (120 wide)
+    lv_obj_t * col2 = lv_obj_create(row);
+    lv_obj_set_size(col2, 120, 290);
+    lv_obj_set_style_border_width(col2, 0, 0);
+
+    // Third column (160 wide), split into two rows
+    lv_obj_t * col3 = lv_obj_create(row);
+    lv_obj_set_size(col3, 160, 290);
+    lv_obj_set_style_border_width(col3, 0, 0);
+    lv_obj_set_flex_flow(col3, LV_FLEX_FLOW_COLUMN);
+// Disable scrolling and scrollbar for col3
+lv_obj_set_scroll_dir(col3, LV_DIR_NONE);
+lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
+    // Top cell in third column
+    lv_obj_t * col3_row1 = lv_obj_create(col3);
+    lv_obj_set_size(col3_row1, 160, 130); // Half of 290
+    lv_obj_set_style_border_width(col3_row1, 0, 0);
+
+    // Bottom cell in third column
+    lv_obj_t * col3_row2 = lv_obj_create(col3);
+    lv_obj_set_size(col3_row2, 160, 140);
+    lv_obj_set_style_border_width(col3_row2, 0, 0);
+
+    // Add a label to the top bar
+    lv_obj_t * label = lv_label_create(top_bar);
+    lv_label_set_text(label, "The Open Source Underwater Vehicle");
+    lv_obj_center(label);
+
+// Create a vertical bar in col1
+bar_motor_a = lv_bar_create(col1);
+lv_obj_set_size(bar_motor_a, 40, 200); // width, height
+lv_obj_center(bar_motor_a);
+lv_bar_set_range(bar_motor_a, -4095, 4095); // -100% to +100%
+lv_bar_set_value(bar_motor_a, 0, LV_ANIM_OFF); // Start at 0
+
+// Add a label for the bar
+lv_obj_t * bar_label = lv_label_create(col1);
+lv_label_set_text(bar_label, "Motor A");
+lv_obj_align(bar_label, LV_ALIGN_TOP_MID, 0, 5);
+
+// Create a vertical bar in col2
+bar_motor_b = lv_bar_create(col2);
+lv_obj_set_size(bar_motor_b, 40, 200); // width, height
+lv_obj_center(bar_motor_b);
+lv_bar_set_range(bar_motor_b, -4095, 4095); // -100% to +100%
+lv_bar_set_value(bar_motor_b, 0, LV_ANIM_OFF); // Start at 0
+
+// Add a label for the bar
+lv_obj_t * bar_label_b = lv_label_create(col2);
+lv_label_set_text(bar_label_b, "Motor B");
+lv_obj_align(bar_label_b, LV_ALIGN_TOP_MID, 0, 5);
+
+// Set flex layout for col3_row1
+lv_obj_set_flex_flow(col3_row1, LV_FLEX_FLOW_COLUMN);
+lv_obj_set_flex_align(col3_row1, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+lv_obj_set_style_pad_all(col3_row1, 0, 0);
+
+// Add the label (first child, will be at the top)
+lv_obj_t * bar_label_z = lv_label_create(col3_row1);
+lv_label_set_text(bar_label_z, "Dive Motor");
+lv_obj_set_style_pad_top(bar_label_z, 5, 0);
+lv_obj_set_style_pad_bottom(bar_label_z, 5, 0);
+lv_obj_set_width(bar_label_z, LV_PCT(100));
+lv_obj_set_style_text_align(bar_label_z, LV_TEXT_ALIGN_CENTER, 0);
+
+// Add the arc dial (second child, will be below the label)
+arc_dial = lv_arc_create(col3_row1);
+lv_obj_set_size(arc_dial, 100, 100);
+lv_obj_set_style_align(arc_dial, LV_ALIGN_CENTER, 0);
+
+// Set arc range: -100 to 100, with 0 in the middle
+lv_arc_set_range(arc_dial, -100, 100);
+lv_arc_set_value(arc_dial, 0); // Start at 0
+
+// Optional: Style the arc
+lv_obj_set_style_arc_width(arc_dial, 12, LV_PART_INDICATOR);
+lv_obj_set_style_arc_color(arc_dial, lv_palette_main(LV_PALETTE_BLUE), LV_PART_INDICATOR);
+
+// Add a label to show the value
+arc_label = lv_label_create(arc_dial);
+lv_label_set_text(arc_label, "0%");
+lv_obj_center(arc_label);
+
+}
 
 int main()
 {
     stdio_init_all();
+    printf("Booting...\n");
     adc_init();
     // Make sure GPIO is high-impedance, no pullups etc
     adc_gpio_init(41);
@@ -133,6 +287,8 @@ int main()
     gpio_put(MOTOR_C_IN1_PIN, true); // Set IN1 high
     gpio_put(MOTOR_C_IN2_PIN, true); // Set IN2 low
 
+
+    
     //initialise screen
     gpio_init(SCREEN_BACKLIGHT);
     gpio_set_dir(SCREEN_BACKLIGHT, GPIO_OUT);
@@ -140,7 +296,7 @@ int main()
 
 
     //Setup SPI
-    // SPI initialisation. This example will use SPI at 1MHz.
+    // SPI initialisation and other screen pins.
  
       spi_init(spi1, 40000*1000);
     gpio_set_function(SCREEN_MISO, GPIO_FUNC_SPI);
@@ -163,9 +319,37 @@ int main()
     gpio_set_dir(SCREEN_LED, GPIO_OUT);
     gpio_put(SCREEN_LED, 1);
 
+    gpio_put(SCREEN_CS, 0);
+
+    // Initialise LVGL
+        lv_init();
+        lv_tick_set_cb(my_tick);
+        screen_init();
+        screen_clear(0xf800);
+        lv_display_t * display1 = lv_display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        if (display1 == NULL) {
+            printf("Failed to create display\n");
+            return -1;
+        }
+//lv_display_set_draw_buffers(display1, buf1, NULL);
+//lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
+        lv_display_set_buffers(display1, buf1, NULL, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+        lv_display_set_flush_cb(display1, my_flush_cb);   
+// lv_display_set_draw_buffers(display1, buf1, NULL);
+// lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
+        lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFF0000), 0);
+        lv_obj_invalidate(lv_screen_active());
+        lv_dashboard_set();
+
+    // static lv_style_t style_indic;
+    // lv_obj_t * bar = lv_bar_create(lv_screen_active());
+    // lv_obj_add_style(bar, &style_indic, LV_PART_INDICATOR);
+    // lv_obj_set_size(bar, 20, 200);
+    // lv_obj_center(bar);
+    // lv_bar_set_range(bar, 0, 4095);
+
 
     while (1) {
-
         adc_select_input(3);  //Joystick A x
         uint adc_x_raw = adc_read();
         adc_select_input(4);  //Joystick A y
@@ -173,13 +357,7 @@ int main()
         adc_select_input(1);  //Joystick B y
         uint adc_z_raw = adc_read();
 
-        //test screen
-        screen_init();
-        screen_clear(0xf800);
-        screen_clear(0x07E0);
-        screen_clear(0x001F);
-        screen_clear(0xf800);        
-
+        //printf("X: %d, Y: %d, Z: %d\n", adc_x_raw, adc_y_raw, adc_z_raw);
     //Normalise joystick input -1 to 1
         float adc_x_norm = ((float)adc_x_raw -2105)/2105;
         float adc_y_norm = ((float)adc_y_raw -2105)/2105;
@@ -188,7 +366,7 @@ int main()
         float max_speed = fmax(fabsf(adc_x_norm), fabsf(adc_y_norm));
         float tot_speed = adc_x_norm + adc_y_norm;
         float diff_speed = adc_x_norm - adc_y_norm;
-        // printf("%f, %f, %f\n", max_speed, tot_speed, diff_speed );
+        //printf("%f, %f, %f\n", max_speed, tot_speed, diff_speed );
         if (adc_y_norm > 0) {
             if(adc_x_norm > 0) {
                 //left max, right diff
@@ -211,10 +389,9 @@ int main()
                 motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, diff_speed);
             }
         }
-
-
-
-
+// Assuming 'bar_motor_a' and 'bar_motor_b' are accessible (make them global or static, or pass them as needed)
+lv_bar_set_value(bar_motor_a, (int)(last_motor_a_speed * 4095), LV_ANIM_OFF);
+lv_bar_set_value(bar_motor_b, (int)(last_motor_b_speed * 4095), LV_ANIM_OFF);
 
         //printf("%f - %f = ", adc_x_norm);        
         //double magnitude_xy = hypot((double)adc_x_norm, (double)adc_y_norm);
@@ -264,20 +441,22 @@ int main()
             gpio_put(MOTOR_C_IN2_PIN, true); // Set IN2 high
         }
 
-        sleep_ms(50);
+// Map duty_cycle_z to -100..100, with 0 at 2110
+// Example normalization if adc_z_raw is 0..4095, 2110 is center
+float duty_cycle_z = (((float)adc_z_raw - 2110) / 2110.0f) * -1.0f; // Normalize to -1.0 to 1.0
+if (duty_cycle_z > 1.0f) duty_cycle_z = 1.0f;
+if (duty_cycle_z < -1.0f) duty_cycle_z = -1.0f;
+int arc_value = (int)(duty_cycle_z * 100.0f); // duty_cycle_z should be -1..1
+
+lv_arc_set_value(arc_dial, arc_value);
+lv_label_set_text_fmt(arc_label, "%d%%", arc_value);
+
+        lv_timer_handler(); // Call the LVGL timer handler to process events
+        sleep_ms(100); // Sleep for a short time to allow LVGL to process events
+
 
     }
 
-    // SPI initialisation. This example will use SPI at 1MHz.
-    spi_init(SPI_PORT, 1000*1000);
-    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(PIN_CS,   GPIO_FUNC_SIO);
-    gpio_set_function(PIN_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
-    
-    // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
+  
 
 }
