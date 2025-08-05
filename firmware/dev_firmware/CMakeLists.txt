@@ -38,7 +38,7 @@ add_subdirectory(lib)
 
 
 # Add executable. Default name is the project name, version 0.1
-add_executable(dev_firmware dev_firmware.c )
+add_executable(dev_firmware dev_firmware.c)
 
 pico_set_program_name(dev_firmware "dev_firmware")
 pico_set_program_version(dev_firmware "0.1")
@@ -49,8 +49,13 @@ pico_enable_stdio_usb(dev_firmware 1)
 
 # Add the standard library to the build
 target_link_libraries(dev_firmware
-        pico_stdlib)
-
+    pico_stdlib
+    hardware_spi
+    hardware_pwm
+    hardware_gpio
+    lvgl
+    screen
+)
 # Add the standard include files to the build
 target_include_directories(dev_firmware PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
@@ -66,6 +71,7 @@ target_link_libraries(dev_firmware
         hardware_spi
         hardware_adc
         hardware_pwm
+        hardware_gpio
         screen
         lvgl
         )

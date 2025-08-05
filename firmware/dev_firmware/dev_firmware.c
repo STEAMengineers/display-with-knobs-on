@@ -7,6 +7,8 @@
 #include "lib/screen.h"
 #include "lvgl/lvgl.h"
 #include "lib/anim_frames.h"
+#include "motors.h"
+#include "pins.h"
 
 //#include "lib/ili9488.h"
 
@@ -14,55 +16,24 @@
 //https://github.com/zapta/pio_tft/tree/main
 //functionalise
 
-// Motor Defines
-// Block 1
-#define MOTOR_A_PWM_PIN 24
-#define MOTOR_A_IN1_PIN 29
-#define MOTOR_A_IN2_PIN 28
-#define MOTOR_B_PWM_PIN 25
-#define MOTOR_B_IN1_PIN 32
-#define MOTOR_B_IN2_PIN 31
-#define STBY_PIN1 30
-
-// Block 2
-#define MOTOR_C_PWM_PIN 26
-#define MOTOR_C_IN1_PIN 33
-#define MOTOR_C_IN2_PIN 34
-#define STBY_PIN2 35
-
-// SPI Defines
-// We are going to use SPI 0, and allocate it to the following GPIO pins
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define SPI_PORT spi1
-#define PIN_MISO 12
-#define PIN_CS   13
-#define PIN_SCK  14
-#define PIN_MOSI 11
-#define SCREEN_RESET 18
-#define SCREEN_DC 17
-#define SCREEN_BACKLIGHT 16
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
-//#define BYTES_PER_PIXEL (LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565))
 // Buffer for the display
-// This buffer will be used to hold the pixel data for the display
-// The size of the buffer is calculated based on the display width, height, and color depth
-//static uint8_t buf1[DISPLAY_WIDTH * 10 * 2]; // 10 rows of pixels, each pixel is 2 bytes (RGB565)
-
-
 #define LV_COLOR_SIZE 2
+
 static uint8_t buf1[DISPLAY_WIDTH * 320 * LV_COLOR_SIZE];
 
-// static lv_draw_buf_t buf1[DISPLAY_WIDTH * 10 * LV_COLOR_SIZE];
 
-volatile float last_motor_a_speed = 0; // Global variable to store the last speed of motor A
+//float deadzone = 0.05f; // Deadzone for motor control
+//volatile float last_motor_a_speed = 0; // Global variable to store the last speed of motor A
 lv_obj_t * bar_motor_a = NULL;
-volatile float last_motor_b_speed = 0; // Global variable to store the last speed of motor B
+//volatile float last_motor_b_speed = 0; // Global variable to store the last speed of motor B
 lv_obj_t * bar_motor_b = NULL;
 
- lv_obj_t *arc_dial = NULL;
+lv_obj_t *scale = NULL;
 lv_obj_t *arc_label = NULL;
+static lv_obj_t * needle_line;
 
 // Animation frames for the animation
 const lv_image_dsc_t * anim_frames[] = {
@@ -86,70 +57,23 @@ static uint32_t my_tick(void) {
 	return to_ms_since_boot(get_absolute_time());
 }
 
-
-//Motor Functions
-
-void motor_configure_pwm(uint8_t gpio_pin, float target_frequency) {
-    gpio_set_function(gpio_pin, GPIO_FUNC_PWM);
-    uint slice_num = pwm_gpio_to_slice_num(gpio_pin);
-
-    const uint32_t clock_sys = 125000000;
-    float clkdiv = 4.0f;
-    uint32_t wrap = (clock_sys / (target_frequency * clkdiv)) - 1;
-
-    while (wrap > 65535) {
-        clkdiv += 1.0f;
-        wrap = (clock_sys / (target_frequency * clkdiv)) - 1;
-    }
-
-    pwm_config config = pwm_get_default_config();
-    pwm_config_set_clkdiv(&config, clkdiv);
-    pwm_config_set_wrap(&config, wrap);
-
-    pwm_init(slice_num, &config, true);
-    pwm_set_gpio_level(gpio_pin, 0);
-}
-
-void motor_set_speed(uint8_t pwm_pin, uint8_t in1_pin, uint8_t in2_pin, float speed ){
-
-        //set direction
-        if (speed > 0){
-            gpio_put(in1_pin, false); // Set IN1 low
-            gpio_put(in2_pin, true); // Set IN2 high
-        } else {
-            gpio_put(in2_pin, false); // Set IN2 low
-            gpio_put(in1_pin, true); // Set IN1 high
-        }    
-        //set speed
-            float duty_cycle = fabsf(speed); 
-            pwm_set_gpio_level(pwm_pin, (uint16_t)(duty_cycle * 65535));
-
-        // Store the last speed for display updates
-        if (pwm_pin == MOTOR_A_PWM_PIN) {
-            last_motor_a_speed = speed;
-        } else if (pwm_pin == MOTOR_B_PWM_PIN) {
-            last_motor_b_speed = speed;
-        }   
-
-}
-
-
 void lv_dashboard_set(void)
 {
     // Main container (screen)
     lv_obj_t * cont = lv_obj_create(lv_screen_active());
-    lv_obj_set_size(cont, 470, 310);
+    lv_obj_set_size(cont, 480, 320);
     lv_obj_center(cont);
     lv_obj_set_style_pad_all(cont, 0, 0);
     lv_obj_set_style_border_width(cont, 0, 0);
     lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN); // vertical stacking
-
+lv_obj_set_style_bg_img_src(cont, &brushedsteelplainwithrivets, 0);
     // Top bar (20px high, full width)
     lv_obj_t * top_bar = lv_obj_create(cont);
     lv_obj_set_size(top_bar, 470, 20);
     lv_obj_set_style_bg_color(top_bar, lv_palette_main(LV_PALETTE_BLUE), 0);
     lv_obj_set_style_border_width(top_bar, 0, 0);
+    lv_obj_set_style_bg_opa(top_bar, LV_OPA_TRANSP, 0); // Transparent background
 
     // Row container for columns
     lv_obj_t * row = lv_obj_create(cont);
@@ -157,22 +81,26 @@ void lv_dashboard_set(void)
     lv_obj_set_style_pad_all(row, 0, 0);
     lv_obj_set_style_border_width(row, 0, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW); // horizontal stacking
-
+lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); // Make background transparent
     // First column (120 wide)
     lv_obj_t * col1 = lv_obj_create(row);
     lv_obj_set_size(col1, 120, 290);
     lv_obj_set_style_border_width(col1, 0, 0);
+    lv_obj_set_style_bg_opa(col1, LV_OPA_TRANSP, 0); // Transparent background
 
     // Second column (120 wide)
     lv_obj_t * col2 = lv_obj_create(row);
     lv_obj_set_size(col2, 120, 290);
     lv_obj_set_style_border_width(col2, 0, 0);
+    lv_obj_set_style_bg_opa(col2, LV_OPA_TRANSP, 0); // Transparent background
 
     // Third column (160 wide), split into two rows
     lv_obj_t * col3 = lv_obj_create(row);
     lv_obj_set_size(col3, 160, 290);
     lv_obj_set_style_border_width(col3, 0, 0);
     lv_obj_set_flex_flow(col3, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_bg_opa(col3, LV_OPA_TRANSP, 0); // Transparent background
+
 // Disable scrolling and scrollbar for col3
 lv_obj_set_scroll_dir(col3, LV_DIR_NONE);
 lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
@@ -180,11 +108,14 @@ lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
     lv_obj_t * col3_row1 = lv_obj_create(col3);
     lv_obj_set_size(col3_row1, 160, 130); // Half of 290
     lv_obj_set_style_border_width(col3_row1, 0, 0);
+    lv_obj_set_style_bg_opa(col3_row1, LV_OPA_TRANSP, 0); // Transparent background
+
 
     // Bottom cell in third column
     lv_obj_t * col3_row2 = lv_obj_create(col3);
     lv_obj_set_size(col3_row2, 160, 140);
     lv_obj_set_style_border_width(col3_row2, 0, 0);
+    lv_obj_set_style_bg_opa(col3_row2, LV_OPA_TRANSP, 0); // Transparent background
 
     // Add a label to the top bar
     lv_obj_t * label = lv_label_create(top_bar);
@@ -228,23 +159,43 @@ lv_obj_set_style_pad_bottom(bar_label_z, 5, 0);
 lv_obj_set_width(bar_label_z, LV_PCT(100));
 lv_obj_set_style_text_align(bar_label_z, LV_TEXT_ALIGN_CENTER, 0);
 
-// Add the arc dial (second child, will be below the label)
-arc_dial = lv_arc_create(col3_row1);
-lv_obj_set_size(arc_dial, 100, 100);
-lv_obj_set_style_align(arc_dial, LV_ALIGN_CENTER, 0);
+// Add the scale widget (second child, will be below the label)
 
-// Set arc range: -100 to 100, with 0 in the middle
-lv_arc_set_range(arc_dial, -100, 100);
-lv_arc_set_value(arc_dial, 0); // Start at 0
+scale = lv_scale_create(col3_row1);
 
-// Optional: Style the arc
-lv_obj_set_style_arc_width(arc_dial, 12, LV_PART_INDICATOR);
-lv_obj_set_style_arc_color(arc_dial, lv_palette_main(LV_PALETTE_BLUE), LV_PART_INDICATOR);
+    lv_obj_set_size(scale, 120, 100);
+    lv_scale_set_mode(scale, LV_SCALE_MODE_ROUND_INNER);
+    lv_obj_set_style_bg_opa(scale, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(scale, lv_palette_lighten(LV_PALETTE_RED, 5), 0);
+    lv_obj_set_style_radius(scale, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_clip_corner(scale, true, 0);
+    lv_obj_align(scale, LV_ALIGN_LEFT_MID, LV_PCT(2), 0);
 
-// Add a label to show the value
-arc_label = lv_label_create(arc_dial);
-lv_label_set_text(arc_label, "0%");
-lv_obj_center(arc_label);
+    lv_scale_set_label_show(scale, true);
+
+    //lv_scale_set_total_tick_count(scale, 31);
+    lv_scale_set_major_tick_every(scale, 25);
+    lv_scale_set_range(scale, -100, 100);
+    lv_obj_set_style_length(scale, 5, LV_PART_ITEMS);
+    //lv_scale_set_line_needle_value(scale, needle_line, 45, 0);
+    lv_scale_set_range(scale, -100, 100);
+
+    lv_scale_set_angle_range(scale, 270);
+    lv_scale_set_rotation(scale, 135);
+
+    needle_line = lv_line_create(scale);
+
+    lv_obj_set_style_line_width(needle_line, 6, LV_PART_MAIN);
+    lv_obj_set_style_line_rounded(needle_line, true, LV_PART_MAIN);
+
+
+    lv_obj_set_style_align(scale, LV_ALIGN_CENTER, 0);
+
+// Set scale range: -100 to 100, with 0 in the middle
+lv_scale_set_range(scale, -100, 100);
+
+
+
 
 //Animation image in col3_row2
 anim_img = lv_image_create(col3_row2);
@@ -290,12 +241,11 @@ int main()
     gpio_set_dir(STBY_PIN1, GPIO_OUT);
     gpio_put(STBY_PIN1, true); // Enable the motor driver
 
-    //Initialise direction pins to stopped
-    gpio_put(MOTOR_A_IN1_PIN, true); // Set IN1 high
-    gpio_put(MOTOR_A_IN2_PIN, true); // Set IN2 low
-    gpio_put(MOTOR_B_IN1_PIN, true); // Set IN1 high
-    gpio_put(MOTOR_B_IN2_PIN, true); // Set IN2 low
-
+//Initialise direction pins to stopped (both low)
+gpio_put(MOTOR_A_IN1_PIN, 0);
+gpio_put(MOTOR_A_IN2_PIN, 0);
+gpio_put(MOTOR_B_IN1_PIN, 0);
+gpio_put(MOTOR_B_IN2_PIN, 0);
 
     //Configure motor block 2
     //Motor C
@@ -310,9 +260,8 @@ int main()
     gpio_put(STBY_PIN2, true); // Enable the motor driver
 
     //Initialise direction pins to stopped
-    gpio_put(MOTOR_C_IN1_PIN, true); // Set IN1 high
-    gpio_put(MOTOR_C_IN2_PIN, true); // Set IN2 low
-
+    gpio_put(MOTOR_C_IN1_PIN, 0); // Set IN1 low
+    gpio_put(MOTOR_C_IN2_PIN, 0); // Set IN2 low
 
     
     //initialise screen
@@ -360,125 +309,54 @@ int main()
 //lv_display_set_draw_buffers(display1, buf1, NULL);
 //lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
         lv_display_set_buffers(display1, buf1, NULL, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-        lv_display_set_flush_cb(display1, my_flush_cb);   
+        lv_display_set_flush_cb(display1, my_flush_cb); 
+
 // lv_display_set_draw_buffers(display1, buf1, NULL);
 // lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
         lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFF0000), 0);
         lv_obj_invalidate(lv_screen_active());
         lv_dashboard_set();
 
-    // static lv_style_t style_indic;
-    // lv_obj_t * bar = lv_bar_create(lv_screen_active());
-    // lv_obj_add_style(bar, &style_indic, LV_PART_INDICATOR);
-    // lv_obj_set_size(bar, 20, 200);
-    // lv_obj_center(bar);
-    // lv_bar_set_range(bar, 0, 4095);
-
-
     while (1) {
-        adc_select_input(3);  //Joystick A x
+        adc_select_input(4);  //Joystick A x
         uint adc_x_raw = adc_read();
-        adc_select_input(4);  //Joystick A y
+        adc_select_input(3);  //Joystick A y
         uint adc_y_raw = adc_read();
         adc_select_input(1);  //Joystick B y
         uint adc_z_raw = adc_read();
 
         //printf("X: %d, Y: %d, Z: %d\n", adc_x_raw, adc_y_raw, adc_z_raw);
     //Normalise joystick input -1 to 1
-        float adc_x_norm = ((float)adc_x_raw -2105)/2105;
-        float adc_y_norm = ((float)adc_y_raw -2105)/2105;
+        float adc_x_norm = (((float)adc_x_raw -2105)/2105) * -1.0f; // Normalize to -1.0 to 1.0
+        float adc_y_norm = (((float)adc_y_raw -2105)/2105) * -1.0f; // Normalize to -1.0 to 1.0
 
-        // https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
-        float max_speed = fmax(fabsf(adc_x_norm), fabsf(adc_y_norm));
-        float tot_speed = adc_x_norm + adc_y_norm;
-        float diff_speed = adc_x_norm - adc_y_norm;
-        //printf("%f, %f, %f\n", max_speed, tot_speed, diff_speed );
-        if (adc_y_norm > 0) {
-            if(adc_x_norm > 0) {
-                //left max, right diff
-                motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, max_speed);
-                motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, diff_speed);
-            } else {
-                //left tot, right max
-                motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, tot_speed);
-                motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, max_speed);
-            }
-        } else {
-            if(adc_x_norm > 0 ) {
-                // left tot, right -max
-                motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, tot_speed);
-                motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, -1 * max_speed);
+        float left, right;
+        differential_drive(adc_x_norm, adc_y_norm, deadzone, &left, &right); // 0.05f is a typical deadzone
 
-            } else {
-                // left -max, right diff
-                motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, -1 * max_speed);
-                motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, diff_speed);
-            }
-        }
-// Assuming 'bar_motor_a' and 'bar_motor_b' are accessible (make them global or static, or pass them as needed)
-lv_bar_set_value(bar_motor_a, (int)(last_motor_a_speed * 4095), LV_ANIM_OFF);
-lv_bar_set_value(bar_motor_b, (int)(last_motor_b_speed * 4095), LV_ANIM_OFF);
+        motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, left);
+        motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, right);
 
-        //printf("%f - %f = ", adc_x_norm);        
-        //double magnitude_xy = hypot((double)adc_x_norm, (double)adc_y_norm);
-        //double angle_xy = atan2((double)adc_y_norm, (double)adc_x_norm);
+        lv_bar_set_value(bar_motor_a, (int)(last_motor_a_speed * 4095), LV_ANIM_OFF);
+        lv_bar_set_value(bar_motor_b, (int)(last_motor_b_speed * 4095), LV_ANIM_OFF);
 
+        // Normalize adc_z_raw to -1.0 .. 1.0 (centered at 2105)
+        float adc_z_norm = (((float)adc_z_raw - 2105) / 2105.0f) * -1.0f;
+        if (adc_z_norm > 1.0f) adc_z_norm = 1.0f;
+        if (adc_z_norm < -1.0f) adc_z_norm = -1.0f;
 
-
-
-        //printf("%f\n", magnitude_xy);
-        //printf("\n");    
-
-        // Display the joystick position something like this:
-        // X: [            o             ]  Y: [              o         ]
-//        const uint bar_width = 40;
-//        const uint adc_max = (1 << 12) - 1;
-//        uint bar_x_pos = adc_x_raw * bar_width / adc_max;
-//        uint bar_y_pos = adc_y_raw * bar_width / adc_max;
-//        printf("\rX: [");
-//        for (uint i = 0; i < bar_width; ++i)
-//            putchar( i == bar_x_pos ? 'o' : ' ');
-//        printf("%d", adc_x_raw);    
-//        printf("]  Y: [");
-//        for (uint i = 0; i < bar_width; ++i)
-//            putchar( i == bar_y_pos ? 'o' : ' ');
-//        printf("]\n");
-
-
-        //Speed and direction of dive motor
-        if(adc_z_raw > 2110) {
-            //Motor forward
-            gpio_put(MOTOR_C_IN1_PIN, true); // Set IN1 high
-            gpio_put(MOTOR_C_IN2_PIN, false); // Set IN2 low
-            float duty_cycle_z = (float)adc_z_raw - 2110;
-            //duty_cycle_x = (2105 - duty_cycle_x)/2105; 
-            duty_cycle_z = duty_cycle_z / 2110;
-            pwm_set_gpio_level(MOTOR_C_PWM_PIN, (uint16_t)(duty_cycle_z * 65535));
-
-        } else if(adc_z_raw < 2100) {
-            //motor reverse
-            gpio_put(MOTOR_C_IN1_PIN, false); // Set IN1 low
-            gpio_put(MOTOR_C_IN2_PIN, true); // Set IN2 high
-            float duty_cycle_z = (2105 - (float)adc_z_raw)/2105; 
-            pwm_set_gpio_level(MOTOR_C_PWM_PIN, (uint16_t)(duty_cycle_z * 65535));
-
-        } else {
-            gpio_put(MOTOR_C_IN1_PIN, true); // Set IN1 low
-            gpio_put(MOTOR_C_IN2_PIN, true); // Set IN2 high
-        }
-
-// Map duty_cycle_z to -100..100, with 0 at 2110
-// Example normalization if adc_z_raw is 0..4095, 2110 is center
-float duty_cycle_z = (((float)adc_z_raw - 2110) / 2110.0f) * -1.0f; // Normalize to -1.0 to 1.0
-if (duty_cycle_z > 1.0f) duty_cycle_z = 1.0f;
-if (duty_cycle_z < -1.0f) duty_cycle_z = -1.0f;
-int arc_value = (int)(duty_cycle_z * 100.0f); // duty_cycle_z should be -1..1
-
-lv_arc_set_value(arc_dial, arc_value);
-lv_label_set_text_fmt(arc_label, "%d%%", arc_value);
+        dive_motor_drive(adc_z_norm, deadzone); // 0.05f is a typical deadzone
+        
 
         lv_timer_handler(); // Call the LVGL timer handler to process events
         sleep_ms(100); // Sleep for a short time to allow LVGL to process events
+int scale_value;
+if(fabsf(adc_z_norm) < deadzone) {
+    scale_value = 0;
+} else {
+    scale_value = (int)roundf(adc_z_norm * 100.0f);
+}
+//lv_scale_set_line_needle_value(scale, needle_line, 45, scale_value);
+//lv_label_set_text_fmt(arc_label, "%d%%", scale_value);
 
 
     }

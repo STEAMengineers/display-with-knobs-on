@@ -3,14 +3,6 @@
 
 #include "lvgl.h"
 
-#define SCREEN_CS 13
-#define SCREEN_RESET 18
-#define SCREEN_DC_RS 17
-#define SCREEN_MOSI 11
-#define SCREEN_CLK 14
-#define SCREEN_LED 16
-#define SCREEN_MISO 12
-
 void screen_init(void);
 void screen_reset(void);
 void spi_write(unsigned char d);

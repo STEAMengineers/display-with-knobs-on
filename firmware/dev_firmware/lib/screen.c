@@ -1,10 +1,9 @@
 #include "screen.h"
 #include <stdio.h>
 #include "./pico/stdlib.h"
-
 #include "hardware/spi.h"
 #include "lvgl.h"
-
+#include "pins.h"
 
 void spi_write(unsigned char d)
 {
@@ -173,16 +172,16 @@ void my_flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p)
     uint16_t y1 = area->y1;
     uint16_t x2 = area->x2;
     uint16_t y2 = area->y2;
-        printf("In the flush callback - ");
-        printf("Area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
+    //    printf("In the flush callback - ");
+    //    printf("Area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
     // Set the address window for the display
         gpio_put(SCREEN_CS, 0);
     screen_address_set(x1, y1, x2, y2);
-    printf("Address set for area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
-    printf("Flush area: %d x %d\n", (area->x2 - area->x1 + 1), (area->y2 - area->y1 + 1));
+    // printf("Address set for area: x1=%d, y1=%d, x2=%d, y2=%d\n", x1, y1, x2, y2);
+    // printf("Flush area: %d x %d\n", (area->x2 - area->x1 + 1), (area->y2 - area->y1 + 1));
     gpio_put(SCREEN_CS, 0);
     size_t px_count = (x2 - x1 + 1) * (y2 - y1 + 1);
-    printf("Pixels to write: %zu\n", px_count);
+    // printf("Pixels to write: %zu\n", px_count);
 
 
     uint16_t * color = (uint16_t *)color_p;
