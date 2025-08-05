@@ -37,6 +37,37 @@ void write_command_and_data(unsigned char command, unsigned char data)
 
 void screen_init()
 {
+    //initialise screen
+    gpio_init(SCREEN_BACKLIGHT);
+    gpio_set_dir(SCREEN_BACKLIGHT, GPIO_OUT);
+    gpio_put(SCREEN_BACKLIGHT, true);
+
+    //Setup SPI
+    // SPI initialisation and other screen pins.
+ 
+    spi_init(spi1, 40000*1000);
+    gpio_set_function(SCREEN_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(SCREEN_CLK,  GPIO_FUNC_SPI);
+    gpio_set_function(SCREEN_MOSI, GPIO_FUNC_SPI);
+    
+    gpio_init(SCREEN_CS);
+    gpio_set_dir(SCREEN_CS, GPIO_OUT);
+    gpio_put(SCREEN_CS, 1);
+
+    gpio_init(SCREEN_RESET);
+    gpio_set_dir(SCREEN_RESET, GPIO_OUT);
+    gpio_put(SCREEN_RESET, 1);
+
+    gpio_init(SCREEN_DC_RS);
+    gpio_set_dir(SCREEN_DC_RS, GPIO_OUT);
+    gpio_put(SCREEN_DC_RS, 1);
+
+    gpio_init(SCREEN_LED);
+    gpio_set_dir(SCREEN_LED, GPIO_OUT);
+    gpio_put(SCREEN_LED, 1);
+
+    gpio_put(SCREEN_CS, 0);
+
     screen_reset();
 
     gpio_put(SCREEN_CS, 0);

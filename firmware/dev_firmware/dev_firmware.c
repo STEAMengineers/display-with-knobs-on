@@ -13,8 +13,10 @@
 //#include "lib/ili9488.h"
 
 //TODO -SCREEN
-//https://github.com/zapta/pio_tft/tree/main
-//functionalise
+
+//Improve GUI
+//  -Add image to controls
+//  -Add animation picture frame
 
 
 #define DISPLAY_WIDTH 480
@@ -26,9 +28,9 @@ static uint8_t buf1[DISPLAY_WIDTH * 320 * LV_COLOR_SIZE];
 
 
 //float deadzone = 0.05f; // Deadzone for motor control
-//volatile float last_motor_a_speed = 0; // Global variable to store the last speed of motor A
+// Global variable to store the last speed of motor A
 lv_obj_t * bar_motor_a = NULL;
-//volatile float last_motor_b_speed = 0; // Global variable to store the last speed of motor B
+// Global variable to store the last speed of motor B
 lv_obj_t * bar_motor_b = NULL;
 
 lv_obj_t *scale = NULL;
@@ -43,6 +45,7 @@ const lv_image_dsc_t * anim_frames[] = {
     &animation24, &animation25, &animation26, &animation27, &animation28, &animation29, &animation30, &animation31,
     &animation32, &animation33, &animation34, &animation35, &animation36, &animation37
 };
+
 const uint8_t anim_frame_count = sizeof(anim_frames) / sizeof(anim_frames[0]);
 static lv_obj_t * anim_img = NULL;
 static uint8_t anim_frame_idx = 0;
@@ -67,7 +70,8 @@ void lv_dashboard_set(void)
     lv_obj_set_style_border_width(cont, 0, 0);
     lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN); // vertical stacking
-lv_obj_set_style_bg_img_src(cont, &brushedsteelplainwithrivets, 0);
+    lv_obj_set_style_bg_img_src(cont, &brushedsteelplainwithrivets, 0);
+
     // Top bar (20px high, full width)
     lv_obj_t * top_bar = lv_obj_create(cont);
     lv_obj_set_size(top_bar, 470, 20);
@@ -77,11 +81,12 @@ lv_obj_set_style_bg_img_src(cont, &brushedsteelplainwithrivets, 0);
 
     // Row container for columns
     lv_obj_t * row = lv_obj_create(cont);
-    lv_obj_set_size(row, 470, 290); // Remaining height
+    lv_obj_set_size(row, 470, 300); // Remaining height
     lv_obj_set_style_pad_all(row, 0, 0);
     lv_obj_set_style_border_width(row, 0, 0);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW); // horizontal stacking
-lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); // Make background transparent
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); // Make background transparent
+
     // First column (120 wide)
     lv_obj_t * col1 = lv_obj_create(row);
     lv_obj_set_size(col1, 120, 290);
@@ -101,45 +106,83 @@ lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); // Make background transparent
     lv_obj_set_flex_flow(col3, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_bg_opa(col3, LV_OPA_TRANSP, 0); // Transparent background
 
-// Disable scrolling and scrollbar for col3
-lv_obj_set_scroll_dir(col3, LV_DIR_NONE);
-lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
+    // Disable scrolling and scrollbar for col3
+    lv_obj_set_scroll_dir(col3, LV_DIR_NONE);
+    lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
+
     // Top cell in third column
     lv_obj_t * col3_row1 = lv_obj_create(col3);
-    lv_obj_set_size(col3_row1, 160, 130); // Half of 290
+    lv_obj_set_size(col3_row1, 150, 140); // Half of 290
     lv_obj_set_style_border_width(col3_row1, 0, 0);
     lv_obj_set_style_bg_opa(col3_row1, LV_OPA_TRANSP, 0); // Transparent background
 
-
     // Bottom cell in third column
     lv_obj_t * col3_row2 = lv_obj_create(col3);
-    lv_obj_set_size(col3_row2, 160, 140);
+    lv_obj_set_size(col3_row2, 170, 140);
     lv_obj_set_style_border_width(col3_row2, 0, 0);
     lv_obj_set_style_bg_opa(col3_row2, LV_OPA_TRANSP, 0); // Transparent background
 
     // Add a label to the top bar
-    lv_obj_t * label = lv_label_create(top_bar);
-    lv_label_set_text(label, "The Open Source Underwater Vehicle");
-    lv_obj_center(label);
+    //lv_obj_t * label = lv_label_create(top_bar);
+    //lv_label_set_text(label, "The Open Source Underwater Vehicle");
+    //lv_obj_center(label);
 
-// Create a vertical bar in col1
-bar_motor_a = lv_bar_create(col1);
-lv_obj_set_size(bar_motor_a, 40, 200); // width, height
-lv_obj_center(bar_motor_a);
-lv_bar_set_range(bar_motor_a, -4095, 4095); // -100% to +100%
-lv_bar_set_value(bar_motor_a, 0, LV_ANIM_OFF); // Start at 0
+    // Create a vertical bar in col1
+    bar_motor_a = lv_slider_create(col1);
+    lv_obj_set_size(bar_motor_a, 20, 200); // width, height
+    lv_obj_center(bar_motor_a);
+    lv_slider_set_range(bar_motor_a, -4095, 4095); // -100% to +100%
+    lv_slider_set_value(bar_motor_a, 0, LV_ANIM_OFF); // Start at 0
 
-// Add a label for the bar
-lv_obj_t * bar_label = lv_label_create(col1);
-lv_label_set_text(bar_label, "Motor A");
-lv_obj_align(bar_label, LV_ALIGN_TOP_MID, 0, 5);
+    static lv_style_t style_main;
+    static lv_style_t knob_style;
+    static lv_style_t style_indicator;
 
-// Create a vertical bar in col2
-bar_motor_b = lv_bar_create(col2);
-lv_obj_set_size(bar_motor_b, 40, 200); // width, height
-lv_obj_center(bar_motor_b);
-lv_bar_set_range(bar_motor_b, -4095, 4095); // -100% to +100%
-lv_bar_set_value(bar_motor_b, 0, LV_ANIM_OFF); // Start at 0
+    lv_style_init(&style_main);
+    lv_style_set_bg_color(&style_main, lv_color_hex(0x000000));
+    lv_style_set_bg_opa(&style_main, LV_OPA_COVER);
+    lv_style_set_border_width(&style_main, 0);
+    lv_style_set_radius(&style_main, 2);
+    lv_style_set_width(&style_main, 10); // Set bar width
+    lv_style_set_shadow_width(&style_main, 2);
+    lv_obj_add_style(bar_motor_a, &style_main, LV_PART_MAIN);
+ 
+    lv_style_init(&knob_style);
+    //lv_style_set_bg_color(&knob_style, lv_palette_main(LV_PALETTE_RED));
+    //lv_style_set_bg_grad_color(&knob_style, lv_palette_lighten(LV_PALETTE_RED, 2));
+    //lv_style_set_bg_grad_dir(&knob_style, LV_GRAD_DIR_VER);
+    //lv_style_set_radius(&knob_style, LV_RADIUS_CIRCLE); // Make it round if desired
+    lv_style_set_pad_top(&knob_style, -25); //Makes no sense but it works
+    lv_style_set_width(&knob_style, 50);  // Set knob width
+    lv_style_set_height(&knob_style, 42); // Set knob height
+    lv_style_set_bg_opa(&knob_style, 0);
+    lv_style_set_bg_image_src(&knob_style, &slot_knob_small);
+    lv_obj_add_style(bar_motor_a, &knob_style, LV_PART_KNOB);
+
+    //Hide indicator
+    lv_obj_set_style_opa(bar_motor_a, LV_OPA_TRANSP, LV_PART_INDICATOR);
+
+    // LV_IMAGE_DECLARE(slot_knob_small);
+    // lv_image_set_src(bar_motor_a, &slot_knob_small);
+
+    lv_obj_center(bar_motor_a);
+
+    // Add a label for the bar
+    lv_obj_t * bar_label = lv_label_create(col1);
+    lv_label_set_text(bar_label, "Motor A");
+    lv_obj_align(bar_label, LV_ALIGN_TOP_MID, 0, 5);
+
+    // Create a vertical bar in col2
+    bar_motor_b = lv_slider_create(col2);
+    lv_obj_set_size(bar_motor_b, 20, 200); // width, height
+    lv_obj_center(bar_motor_b);
+    lv_bar_set_range(bar_motor_b, -4095, 4095); // -100% to +100%
+    lv_slider_set_value(bar_motor_b, 0, LV_ANIM_OFF); // Start at 0
+    lv_obj_add_style(bar_motor_b, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(bar_motor_b, &knob_style, LV_PART_KNOB);
+  //Hide indicator
+    lv_obj_set_style_opa(bar_motor_b, LV_OPA_TRANSP, LV_PART_INDICATOR);
+  
 
 // Add a label for the bar
 lv_obj_t * bar_label_b = lv_label_create(col2);
@@ -160,51 +203,16 @@ lv_obj_set_width(bar_label_z, LV_PCT(100));
 lv_obj_set_style_text_align(bar_label_z, LV_TEXT_ALIGN_CENTER, 0);
 
 // Add the scale widget (second child, will be below the label)
-
 scale = lv_scale_create(col3_row1);
-
-    lv_obj_set_size(scale, 120, 100);
-    lv_scale_set_mode(scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_obj_set_style_bg_opa(scale, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(scale, lv_palette_lighten(LV_PALETTE_RED, 5), 0);
-    lv_obj_set_style_radius(scale, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_clip_corner(scale, true, 0);
-    lv_obj_align(scale, LV_ALIGN_LEFT_MID, LV_PCT(2), 0);
-
-    lv_scale_set_label_show(scale, true);
-
-    //lv_scale_set_total_tick_count(scale, 31);
-    lv_scale_set_major_tick_every(scale, 25);
-    lv_scale_set_range(scale, -100, 100);
-    lv_obj_set_style_length(scale, 5, LV_PART_ITEMS);
-    //lv_scale_set_line_needle_value(scale, needle_line, 45, 0);
-    lv_scale_set_range(scale, -100, 100);
-
-    lv_scale_set_angle_range(scale, 270);
-    lv_scale_set_rotation(scale, 135);
-
-    needle_line = lv_line_create(scale);
-
-    lv_obj_set_style_line_width(needle_line, 6, LV_PART_MAIN);
-    lv_obj_set_style_line_rounded(needle_line, true, LV_PART_MAIN);
-
-
-    lv_obj_set_style_align(scale, LV_ALIGN_CENTER, 0);
-
-// Set scale range: -100 to 100, with 0 in the middle
-lv_scale_set_range(scale, -100, 100);
-
-
-
 
 //Animation image in col3_row2
 anim_img = lv_image_create(col3_row2);
 lv_image_set_src(anim_img, anim_frames[0]);
-lv_obj_set_align(anim_img, LV_ALIGN_LEFT_MID);
+//lv_obj_set_align(anim_img, LV_ALIGN_TOP_MID);
+lv_obj_set_pos(anim_img, 0, 0);    /* Or in one function */
 lv_obj_set_style_pad_all(col3_row2, 0, 0);
 lv_obj_set_style_border_width(col3_row2, 0, 0);
 lv_timer_create(anim_img_timer_cb, 100, NULL); // 100 ms interval for animation
-
 
 }
 
@@ -212,6 +220,12 @@ int main()
 {
     stdio_init_all();
     printf("Booting...\n");
+    printf("Pico SDK Version: %s\n", PICO_SDK_VERSION_STRING);
+    printf("========================================\n");
+    printf("Display with Knobs on Firmware\n");
+    printf("========================================\n");
+
+    printf("Initialising GPIOs...\n");
     adc_init();
     // Make sure GPIO is high-impedance, no pullups etc
     adc_gpio_init(41);
@@ -219,103 +233,25 @@ int main()
     adc_gpio_init(43);
     adc_gpio_init(44);
 
-    //ili9488_init();
-
-
-    //Configure motor block 1
-    //Motor A
-    motor_configure_pwm(MOTOR_A_PWM_PIN, 1000.0f);
-    gpio_init(MOTOR_A_IN1_PIN);
-    gpio_init(MOTOR_A_IN2_PIN);
-    gpio_set_dir(MOTOR_A_IN1_PIN, GPIO_OUT);
-    gpio_set_dir(MOTOR_A_IN2_PIN, GPIO_OUT);
-    //Motor B
-    motor_configure_pwm(MOTOR_B_PWM_PIN, 1000.0f);
-    gpio_init(MOTOR_B_IN1_PIN);
-    gpio_init(MOTOR_B_IN2_PIN);
-    gpio_set_dir(MOTOR_B_IN1_PIN, GPIO_OUT);
-    gpio_set_dir(MOTOR_B_IN2_PIN, GPIO_OUT);
-
-
-    gpio_init(STBY_PIN1);
-    gpio_set_dir(STBY_PIN1, GPIO_OUT);
-    gpio_put(STBY_PIN1, true); // Enable the motor driver
-
-//Initialise direction pins to stopped (both low)
-gpio_put(MOTOR_A_IN1_PIN, 0);
-gpio_put(MOTOR_A_IN2_PIN, 0);
-gpio_put(MOTOR_B_IN1_PIN, 0);
-gpio_put(MOTOR_B_IN2_PIN, 0);
-
-    //Configure motor block 2
-    //Motor C
-    motor_configure_pwm(MOTOR_C_PWM_PIN, 1000.0f);
-    gpio_init(MOTOR_C_IN1_PIN);
-    gpio_init(MOTOR_C_IN2_PIN);
-    gpio_set_dir(MOTOR_C_IN1_PIN, GPIO_OUT);
-    gpio_set_dir(MOTOR_C_IN2_PIN, GPIO_OUT);
-
-    gpio_init(STBY_PIN2);
-    gpio_set_dir(STBY_PIN2, GPIO_OUT);
-    gpio_put(STBY_PIN2, true); // Enable the motor driver
-
-    //Initialise direction pins to stopped
-    gpio_put(MOTOR_C_IN1_PIN, 0); // Set IN1 low
-    gpio_put(MOTOR_C_IN2_PIN, 0); // Set IN2 low
-
+    printf("Initialising motors...\n");
+    initialise_motors();
     
-    //initialise screen
-    gpio_init(SCREEN_BACKLIGHT);
-    gpio_set_dir(SCREEN_BACKLIGHT, GPIO_OUT);
-    gpio_put(SCREEN_BACKLIGHT, true);
-
-
-    //Setup SPI
-    // SPI initialisation and other screen pins.
- 
-      spi_init(spi1, 40000*1000);
-    gpio_set_function(SCREEN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(SCREEN_CLK,  GPIO_FUNC_SPI);
-    gpio_set_function(SCREEN_MOSI, GPIO_FUNC_SPI);
-    
-    gpio_init(SCREEN_CS);
-    gpio_set_dir(SCREEN_CS, GPIO_OUT);
-    gpio_put(SCREEN_CS, 1);
-
-    gpio_init(SCREEN_RESET);
-    gpio_set_dir(SCREEN_RESET, GPIO_OUT);
-    gpio_put(SCREEN_RESET, 1);
-
-    gpio_init(SCREEN_DC_RS);
-    gpio_set_dir(SCREEN_DC_RS, GPIO_OUT);
-    gpio_put(SCREEN_DC_RS, 1);
-
-    gpio_init(SCREEN_LED);
-    gpio_set_dir(SCREEN_LED, GPIO_OUT);
-    gpio_put(SCREEN_LED, 1);
-
-    gpio_put(SCREEN_CS, 0);
-
+    printf("Initialising LVGL...\n");
     // Initialise LVGL
-        lv_init();
-        lv_tick_set_cb(my_tick);
-        screen_init();
-        screen_clear(0xf800);
-        lv_display_t * display1 = lv_display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-        if (display1 == NULL) {
-            printf("Failed to create display\n");
-            return -1;
-        }
-//lv_display_set_draw_buffers(display1, buf1, NULL);
-//lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
-        lv_display_set_buffers(display1, buf1, NULL, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-        lv_display_set_flush_cb(display1, my_flush_cb); 
-
-// lv_display_set_draw_buffers(display1, buf1, NULL);
-// lv_display_set_render_mode(display1, LV_DISPLAY_RENDER_MODE_PARTIAL);
-        lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFF0000), 0);
-        lv_obj_invalidate(lv_screen_active());
-        lv_dashboard_set();
+    lv_init();
+    lv_tick_set_cb(my_tick);
+    screen_init();
+    screen_clear(0xf800);
+    lv_display_t * display1 = lv_display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    if (display1 == NULL) {
+        printf("Failed to create display\n");
+        return -1;
+    }
+    lv_display_set_buffers(display1, buf1, NULL, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_flush_cb(display1, my_flush_cb); 
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x888888), 0);
+    lv_obj_invalidate(lv_screen_active());
+    lv_dashboard_set();
 
     while (1) {
         adc_select_input(4);  //Joystick A x
@@ -326,7 +262,6 @@ gpio_put(MOTOR_B_IN2_PIN, 0);
         uint adc_z_raw = adc_read();
 
         //printf("X: %d, Y: %d, Z: %d\n", adc_x_raw, adc_y_raw, adc_z_raw);
-    //Normalise joystick input -1 to 1
         float adc_x_norm = (((float)adc_x_raw -2105)/2105) * -1.0f; // Normalize to -1.0 to 1.0
         float adc_y_norm = (((float)adc_y_raw -2105)/2105) * -1.0f; // Normalize to -1.0 to 1.0
 
@@ -346,21 +281,22 @@ gpio_put(MOTOR_B_IN2_PIN, 0);
 
         dive_motor_drive(adc_z_norm, deadzone); // 0.05f is a typical deadzone
         
+        // Calculate the angle for the needle based on scale_value (-100 to 100 mapped to 135 to 405 degrees)
+        int scale_value;
+        if(fabsf(adc_z_norm) < deadzone) {
+            scale_value = 0;
+        } else {
+            scale_value = (int)roundf(adc_z_norm * 100.0f);
+        }
+//lv_label_set_text_fmt(arc_label, "%d%%", scale_value);
 
+// Map scale_value (-100 to 100) to angle (135 to 405)
+//float angle = 135 + ((float)(scale_value + 100) / 200.0f) * 270.0f;
+//lv_obj_set_style_transform_angle(needle_line, angle * 10, 0); // LVGL uses 0.1 deg units
         lv_timer_handler(); // Call the LVGL timer handler to process events
         sleep_ms(100); // Sleep for a short time to allow LVGL to process events
-int scale_value;
-if(fabsf(adc_z_norm) < deadzone) {
-    scale_value = 0;
-} else {
-    scale_value = (int)roundf(adc_z_norm * 100.0f);
-}
-//lv_scale_set_line_needle_value(scale, needle_line, 45, scale_value);
-//lv_label_set_text_fmt(arc_label, "%d%%", scale_value);
 
 
     }
-
-  
-
+    return 0;
 }

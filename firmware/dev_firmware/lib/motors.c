@@ -11,6 +11,49 @@ float deadzone = 0.05f;
 volatile float last_motor_a_speed = 0;
 volatile float last_motor_b_speed = 0;
 
+void initialise_motors(void) {
+        //Configure motor block 1
+    //Motor A
+    motor_configure_pwm(MOTOR_A_PWM_PIN, 1000.0f);
+    gpio_init(MOTOR_A_IN1_PIN);
+    gpio_init(MOTOR_A_IN2_PIN);
+    gpio_set_dir(MOTOR_A_IN1_PIN, GPIO_OUT);
+    gpio_set_dir(MOTOR_A_IN2_PIN, GPIO_OUT);
+    //Motor B
+    motor_configure_pwm(MOTOR_B_PWM_PIN, 1000.0f);
+    gpio_init(MOTOR_B_IN1_PIN);
+    gpio_init(MOTOR_B_IN2_PIN);
+    gpio_set_dir(MOTOR_B_IN1_PIN, GPIO_OUT);
+    gpio_set_dir(MOTOR_B_IN2_PIN, GPIO_OUT);
+
+
+    gpio_init(STBY_PIN1);
+    gpio_set_dir(STBY_PIN1, GPIO_OUT);
+    gpio_put(STBY_PIN1, true); // Enable the motor driver
+
+    //Initialise direction pins to stopped (both low)
+    gpio_put(MOTOR_A_IN1_PIN, 0);
+    gpio_put(MOTOR_A_IN2_PIN, 0);
+    gpio_put(MOTOR_B_IN1_PIN, 0);
+    gpio_put(MOTOR_B_IN2_PIN, 0);
+
+        //Configure motor block 2
+    //Motor C
+    motor_configure_pwm(MOTOR_C_PWM_PIN, 1000.0f);
+    gpio_init(MOTOR_C_IN1_PIN);
+    gpio_init(MOTOR_C_IN2_PIN);
+    gpio_set_dir(MOTOR_C_IN1_PIN, GPIO_OUT);
+    gpio_set_dir(MOTOR_C_IN2_PIN, GPIO_OUT);
+
+    gpio_init(STBY_PIN2);
+    gpio_set_dir(STBY_PIN2, GPIO_OUT);
+    gpio_put(STBY_PIN2, true); // Enable the motor driver
+
+    //Initialise direction pins to stopped
+    gpio_put(MOTOR_C_IN1_PIN, 0); // Set IN1 low
+    gpio_put(MOTOR_C_IN2_PIN, 0); // Set IN2 low
+}
+
 void motor_configure_pwm(uint8_t gpio_pin, float target_frequency) {
     gpio_set_function(gpio_pin, GPIO_FUNC_PWM);
     uint slice_num = pwm_gpio_to_slice_num(gpio_pin);

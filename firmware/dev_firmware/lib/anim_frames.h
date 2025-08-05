@@ -37,5 +37,5 @@
 #include "animation36.c"
 #include "animation37.c"
 #include "brushedsteelplainwithrivets.c"
-
+#include "slot_knob_small.c"
 
