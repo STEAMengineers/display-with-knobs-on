@@ -36,6 +36,8 @@
 #include "animation35.c"
 #include "animation36.c"
 #include "animation37.c"
-#include "brushedsteelplainwithrivets.c"
+#include "display_background.c"
 #include "slot_knob_small.c"
-
+#include "left.c"
+#include "right.c"
+#include "dive.c"

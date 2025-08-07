@@ -34,8 +34,8 @@ lv_obj_t * bar_motor_a = NULL;
 lv_obj_t * bar_motor_b = NULL;
 
 lv_obj_t *scale = NULL;
-lv_obj_t *arc_label = NULL;
-static lv_obj_t * needle_line;
+lv_obj_t *dial_label = NULL;
+static lv_obj_t * dive_dial = NULL;
 
 // Animation frames for the animation
 const lv_image_dsc_t * anim_frames[] = {
@@ -69,68 +69,18 @@ void lv_dashboard_set(void)
     lv_obj_set_style_pad_all(cont, 0, 0);
     lv_obj_set_style_border_width(cont, 0, 0);
     lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN); // vertical stacking
-    lv_obj_set_style_bg_img_src(cont, &brushedsteelplainwithrivets, 0);
+    lv_obj_set_style_bg_img_src(cont, &display_background, 0);
 
-    // Top bar (20px high, full width)
-    lv_obj_t * top_bar = lv_obj_create(cont);
-    lv_obj_set_size(top_bar, 470, 20);
-    lv_obj_set_style_bg_color(top_bar, lv_palette_main(LV_PALETTE_BLUE), 0);
-    lv_obj_set_style_border_width(top_bar, 0, 0);
-    lv_obj_set_style_bg_opa(top_bar, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Row container for columns
-    lv_obj_t * row = lv_obj_create(cont);
-    lv_obj_set_size(row, 470, 300); // Remaining height
-    lv_obj_set_style_pad_all(row, 0, 0);
-    lv_obj_set_style_border_width(row, 0, 0);
-    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW); // horizontal stacking
-    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0); // Make background transparent
-
-    // First column (120 wide)
-    lv_obj_t * col1 = lv_obj_create(row);
-    lv_obj_set_size(col1, 120, 290);
-    lv_obj_set_style_border_width(col1, 0, 0);
-    lv_obj_set_style_bg_opa(col1, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Second column (120 wide)
-    lv_obj_t * col2 = lv_obj_create(row);
-    lv_obj_set_size(col2, 120, 290);
-    lv_obj_set_style_border_width(col2, 0, 0);
-    lv_obj_set_style_bg_opa(col2, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Third column (160 wide), split into two rows
-    lv_obj_t * col3 = lv_obj_create(row);
-    lv_obj_set_size(col3, 160, 290);
-    lv_obj_set_style_border_width(col3, 0, 0);
-    lv_obj_set_flex_flow(col3, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_bg_opa(col3, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Disable scrolling and scrollbar for col3
-    lv_obj_set_scroll_dir(col3, LV_DIR_NONE);
-    lv_obj_set_scrollbar_mode(col3, LV_SCROLLBAR_MODE_OFF);
-
-    // Top cell in third column
-    lv_obj_t * col3_row1 = lv_obj_create(col3);
-    lv_obj_set_size(col3_row1, 150, 140); // Half of 290
-    lv_obj_set_style_border_width(col3_row1, 0, 0);
-    lv_obj_set_style_bg_opa(col3_row1, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Bottom cell in third column
-    lv_obj_t * col3_row2 = lv_obj_create(col3);
-    lv_obj_set_size(col3_row2, 170, 140);
-    lv_obj_set_style_border_width(col3_row2, 0, 0);
-    lv_obj_set_style_bg_opa(col3_row2, LV_OPA_TRANSP, 0); // Transparent background
-
-    // Add a label to the top bar
-    //lv_obj_t * label = lv_label_create(top_bar);
-    //lv_label_set_text(label, "The Open Source Underwater Vehicle");
-    //lv_obj_center(label);
+    // Add left label
+    lv_obj_t * img1 = lv_image_create(cont);
+    lv_image_set_src(img1, &left);
+    lv_obj_set_pos(img1, 50, 40);
 
     // Create a vertical bar in col1
-    bar_motor_a = lv_slider_create(col1);
-    lv_obj_set_size(bar_motor_a, 20, 200); // width, height
-    lv_obj_center(bar_motor_a);
+    bar_motor_a = lv_slider_create(cont);
+    lv_obj_set_size(bar_motor_a, 20, 180); // width, height
+    lv_obj_set_style_pad_bottom(bar_motor_a, 30, 0);
+    lv_obj_set_pos(bar_motor_a, 80, 80);
     lv_slider_set_range(bar_motor_a, -4095, 4095); // -100% to +100%
     lv_slider_set_value(bar_motor_a, 0, LV_ANIM_OFF); // Start at 0
 
@@ -148,10 +98,6 @@ void lv_dashboard_set(void)
     lv_obj_add_style(bar_motor_a, &style_main, LV_PART_MAIN);
  
     lv_style_init(&knob_style);
-    //lv_style_set_bg_color(&knob_style, lv_palette_main(LV_PALETTE_RED));
-    //lv_style_set_bg_grad_color(&knob_style, lv_palette_lighten(LV_PALETTE_RED, 2));
-    //lv_style_set_bg_grad_dir(&knob_style, LV_GRAD_DIR_VER);
-    //lv_style_set_radius(&knob_style, LV_RADIUS_CIRCLE); // Make it round if desired
     lv_style_set_pad_top(&knob_style, -25); //Makes no sense but it works
     lv_style_set_width(&knob_style, 50);  // Set knob width
     lv_style_set_height(&knob_style, 42); // Set knob height
@@ -161,58 +107,68 @@ void lv_dashboard_set(void)
 
     //Hide indicator
     lv_obj_set_style_opa(bar_motor_a, LV_OPA_TRANSP, LV_PART_INDICATOR);
-
-    // LV_IMAGE_DECLARE(slot_knob_small);
-    // lv_image_set_src(bar_motor_a, &slot_knob_small);
-
-    lv_obj_center(bar_motor_a);
-
-    // Add a label for the bar
-    lv_obj_t * bar_label = lv_label_create(col1);
-    lv_label_set_text(bar_label, "Motor A");
-    lv_obj_align(bar_label, LV_ALIGN_TOP_MID, 0, 5);
+    
+    // Add a label to col2
+    lv_obj_t * img2 = lv_image_create(cont);
+    lv_image_set_src(img2, &right);
+    lv_obj_set_pos(img2, 160, 40);
 
     // Create a vertical bar in col2
-    bar_motor_b = lv_slider_create(col2);
-    lv_obj_set_size(bar_motor_b, 20, 200); // width, height
-    lv_obj_center(bar_motor_b);
+    bar_motor_b = lv_slider_create(cont);
+    lv_obj_set_size(bar_motor_b, 20, 180); 
+    lv_obj_set_style_pad_bottom(bar_motor_b, 30, 0);
+    lv_obj_set_pos(bar_motor_b, 195, 80);
     lv_bar_set_range(bar_motor_b, -4095, 4095); // -100% to +100%
     lv_slider_set_value(bar_motor_b, 0, LV_ANIM_OFF); // Start at 0
     lv_obj_add_style(bar_motor_b, &style_main, LV_PART_MAIN);
     lv_obj_add_style(bar_motor_b, &knob_style, LV_PART_KNOB);
-  //Hide indicator
+    //Hide indicator
     lv_obj_set_style_opa(bar_motor_b, LV_OPA_TRANSP, LV_PART_INDICATOR);
   
+    // Add a label to col3
 
-// Add a label for the bar
-lv_obj_t * bar_label_b = lv_label_create(col2);
-lv_label_set_text(bar_label_b, "Motor B");
-lv_obj_align(bar_label_b, LV_ALIGN_TOP_MID, 0, 5);
 
-// Set flex layout for col3_row1
-lv_obj_set_flex_flow(col3_row1, LV_FLEX_FLOW_COLUMN);
-lv_obj_set_flex_align(col3_row1, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-lv_obj_set_style_pad_all(col3_row1, 0, 0);
+    lv_obj_t * img3 = lv_image_create(cont);
+    lv_image_set_src(img3, &dive);
+    lv_obj_set_pos(img3, 335, 38);
 
-// Add the label (first child, will be at the top)
-lv_obj_t * bar_label_z = lv_label_create(col3_row1);
-lv_label_set_text(bar_label_z, "Dive Motor");
-lv_obj_set_style_pad_top(bar_label_z, 5, 0);
-lv_obj_set_style_pad_bottom(bar_label_z, 5, 0);
-lv_obj_set_width(bar_label_z, LV_PCT(100));
-lv_obj_set_style_text_align(bar_label_z, LV_TEXT_ALIGN_CENTER, 0);
+    // Add a dial to col3_row2 to show dive motor speed
+    dive_dial = lv_arc_create(cont);
+    lv_obj_set_size(dive_dial, 110, 110);
+    lv_obj_set_pos(dive_dial, 318, 80);
 
-// Add the scale widget (second child, will be below the label)
-scale = lv_scale_create(col3_row1);
+    // Set range and sweep
+    lv_arc_set_range(dive_dial, -100, 100);
+    lv_arc_set_mode(dive_dial, LV_ARC_MODE_NORMAL); // 180° sweep
+    lv_arc_set_rotation(dive_dial, 180);            // Start at bottom
+    lv_arc_set_bg_angles(dive_dial, 0, 180);      // Background arc from 0° to 180°
 
-//Animation image in col3_row2
-anim_img = lv_image_create(col3_row2);
-lv_image_set_src(anim_img, anim_frames[0]);
-//lv_obj_set_align(anim_img, LV_ALIGN_TOP_MID);
-lv_obj_set_pos(anim_img, 0, 0);    /* Or in one function */
-lv_obj_set_style_pad_all(col3_row2, 0, 0);
-lv_obj_set_style_border_width(col3_row2, 0, 0);
-lv_timer_create(anim_img_timer_cb, 100, NULL); // 100 ms interval for animation
+    static lv_style_t style_dive_main;
+    static lv_style_t knob_dive_style;
+
+    lv_style_init(&style_dive_main);
+    lv_style_set_arc_color(&style_dive_main, lv_color_hex(0x000000));
+    lv_obj_add_style(dive_dial, &style_dive_main, LV_PART_MAIN);
+
+    lv_style_init(&knob_dive_style);
+    lv_style_set_bg_color(&knob_dive_style, lv_color_hex(0xBB0000));
+    lv_obj_add_style(dive_dial, &knob_dive_style, LV_PART_KNOB);
+
+    //Hide indicator
+    lv_obj_set_style_opa(dive_dial, LV_OPA_TRANSP, LV_PART_INDICATOR);
+
+    // Add a label below the dial
+    dial_label = lv_label_create(cont);
+    lv_obj_set_pos(dial_label, 363, 120); 
+    lv_label_set_text(dial_label, LV_SYMBOL_MINUS);
+    lv_obj_set_style_text_font(dial_label, &lv_font_montserrat_24, 0);
+
+    //Animation image in col3_row3
+    anim_img = lv_image_create(cont);
+    lv_image_set_src(anim_img, anim_frames[0]);
+    //lv_obj_set_align(anim_img, LV_ALIGN_TOP_MID);
+    lv_obj_set_pos(anim_img, 300, 170);   
+    lv_timer_create(anim_img_timer_cb, 100, NULL); // 100 ms interval for animation
 
 }
 
@@ -227,7 +183,6 @@ int main()
 
     printf("Initialising GPIOs...\n");
     adc_init();
-    // Make sure GPIO is high-impedance, no pullups etc
     adc_gpio_init(41);
     adc_gpio_init(42);
     adc_gpio_init(43);
@@ -266,7 +221,7 @@ int main()
         float adc_y_norm = (((float)adc_y_raw -2105)/2105) * -1.0f; // Normalize to -1.0 to 1.0
 
         float left, right;
-        differential_drive(adc_x_norm, adc_y_norm, deadzone, &left, &right); // 0.05f is a typical deadzone
+        differential_drive(adc_x_norm, adc_y_norm, deadzone, &left, &right); // 0.05f deadzone
 
         motor_set_speed(MOTOR_A_PWM_PIN, MOTOR_A_IN1_PIN, MOTOR_A_IN2_PIN, left);
         motor_set_speed(MOTOR_B_PWM_PIN, MOTOR_B_IN1_PIN, MOTOR_B_IN2_PIN, right);
@@ -279,7 +234,7 @@ int main()
         if (adc_z_norm > 1.0f) adc_z_norm = 1.0f;
         if (adc_z_norm < -1.0f) adc_z_norm = -1.0f;
 
-        dive_motor_drive(adc_z_norm, deadzone); // 0.05f is a typical deadzone
+        dive_motor_drive(adc_z_norm, deadzone); // 0.05f deadzone
         
         // Calculate the angle for the needle based on scale_value (-100 to 100 mapped to 135 to 405 degrees)
         int scale_value;
@@ -288,11 +243,19 @@ int main()
         } else {
             scale_value = (int)roundf(adc_z_norm * 100.0f);
         }
-//lv_label_set_text_fmt(arc_label, "%d%%", scale_value);
+        // Update the arc dial value
+        lv_arc_set_value(dive_dial, scale_value);
+if (fabsf(adc_z_norm) < deadzone) {
+    lv_label_set_text(dial_label, LV_SYMBOL_MINUS);
+} else if (scale_value > 0) {
+    lv_label_set_text(dial_label, LV_SYMBOL_UP);
+} else if (scale_value < 0) {
+    lv_label_set_text(dial_label, LV_SYMBOL_DOWN);
+} else {
+    lv_label_set_text(dial_label, "-");
+}
 
-// Map scale_value (-100 to 100) to angle (135 to 405)
-//float angle = 135 + ((float)(scale_value + 100) / 200.0f) * 270.0f;
-//lv_obj_set_style_transform_angle(needle_line, angle * 10, 0); // LVGL uses 0.1 deg units
+
         lv_timer_handler(); // Call the LVGL timer handler to process events
         sleep_ms(100); // Sleep for a short time to allow LVGL to process events
 

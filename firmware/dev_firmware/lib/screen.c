@@ -228,33 +228,6 @@ void my_flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p)
         write_data(g);
         write_data(b);
     }
-// uint16_t * color = (uint16_t *)color_p;
-//     for (uint32_t y = y1; y <= y2; y++) {
-//         for (uint32_t x = x1; x <= x2; x++) {
-//         uint16_t c = *color++;
-//             //color++;
-//             uint8_t r = (c >> 11) & 0x1F;
-//             uint8_t g = (c >> 5) & 0x3F;
-//             uint8_t b = c & 0x1F;
-//             r = r << 3;
-//             g = g << 2;
-//             b = b << 3;
-//             write_data(r);
-//             write_data(g);
-//             write_data(b);
-//         }
-//     }
-
-// for (uint32_t y = y1; y <= y2; y++) {
-//     for (uint32_t x = x1; x <= x2; x++) {
-//         uint8_t r = ((x/20 + y/20) % 2) ? 0xF8 : 0x00;
-//         uint8_t g = ((x/20 + y/20) % 2) ? 0xFC : 0x00;
-//         uint8_t b = ((x/20 + y/20) % 2) ? 0xF8 : 0x00;
-//         write_data(r);
-//         write_data(g);
-//         write_data(b);
-//     }
-// }
 
     gpio_put(SCREEN_CS, 1);
 
